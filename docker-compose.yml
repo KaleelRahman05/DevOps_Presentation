@@ -1,0 +1,92 @@
+services:
+  # =================================================================
+  # MongoDB Database Service
+  # =================================================================
+  mongodb:
+    image: mongo:7
+    container_name: cinescope-mongodb
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    environment:
+      - MONGO_INITDB_DATABASE=cinescope
+    volumes:
+      # Data is strictly persisted in this named volume across deployments
+      - cinescope-mongo-data:/data/db
+    healthcheck:
+      test: ["CMD-SHELL", "mongosh --eval 'db.adminCommand(\"ping\")' || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - cinescope-network
+
+  # =================================================================
+  # CineScope Backend REST API
+  # =================================================================
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    image: cinescope-backend:latest
+    container_name: cinescope-backend
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    environment:
+      - NODE_ENV=production
+      - PORT=5000
+      - MONGO_URI=mongodb://mongodb:27017/cinescope
+      - JWT_SECRET=${JWT_SECRET:-cinescope_development_secret_key_change_in_production_2026}
+      - JWT_EXPIRES_IN=7d
+      - ADMIN_EMAIL=${ADMIN_EMAIL:-admin@cinescope.com}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD:-Admin@12345}
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:5000/api/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - cinescope-network
+
+  # =================================================================
+  # CineScope Frontend Web UI (Nginx)
+  # =================================================================
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    image: cinescope-frontend:latest
+    container_name: cinescope-frontend
+    restart: unless-stopped
+    ports:
+      - "3000:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost/ || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+    networks:
+      - cinescope-network
+
+# =================================================================
+# Persistent Named Volumes & Network Definitions
+# =================================================================
+volumes:
+  # WARNING: Do NOT run 'docker compose down -v' unless you wish to wipe catalog data!
+  cinescope-mongo-data:
+    name: cinescope-mongo-data
+
+networks:
+  cinescope-network:
+    name: cinescope-network
+    driver: bridge
