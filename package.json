@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "CineScope - Movie Discovery, Ratings & Reviews Platform with Jenkins CI/CD",
   "private": true,
+  "type": "module",
   "scripts": {
     "install:backend": "npm --prefix backend ci || npm --prefix backend install",
     "install:frontend": "npm --prefix frontend ci || npm --prefix frontend install",
