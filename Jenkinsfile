@@ -54,7 +54,30 @@ pipeline {
             }
         }
 
+        stage('Check Docker') {
+            steps {
+                script {
+                    def dockerStatus
+                    if (isUnix()) {
+                        dockerStatus = sh(returnStatus: true, script: 'docker info >/dev/null 2>&1')
+                    } else {
+                        dockerStatus = bat(returnStatus: true, script: '@docker info >NUL 2>&1')
+                    }
+
+                    env.DOCKER_AVAILABLE = dockerStatus == 0 ? 'true' : 'false'
+                    if (env.DOCKER_AVAILABLE == 'true') {
+                        echo 'Docker is available. Deployment and smoke test will run.'
+                    } else {
+                        echo 'Docker is unavailable. Deployment and smoke test will be skipped; CI validation will still complete.'
+                    }
+                }
+            }
+        }
+
         stage('Deploy') {
+            when {
+                expression { env.DOCKER_AVAILABLE == 'true' }
+            }
             steps {
                 script {
                     if (isUnix()) {
@@ -67,6 +90,9 @@ pipeline {
         }
 
         stage('Smoke Test') {
+            when {
+                expression { env.DOCKER_AVAILABLE == 'true' }
+            }
             steps {
                 script {
                     if (isUnix()) {
@@ -81,7 +107,13 @@ pipeline {
 
     post {
         success {
-            echo 'CineScope CI/CD succeeded. App: http://localhost:3000'
+            script {
+                if (env.DOCKER_AVAILABLE == 'true') {
+                    echo 'CineScope CI/CD succeeded. App: http://localhost:3000'
+                } else {
+                    echo 'CineScope CI validation succeeded (tests and build). Deployment and smoke test were skipped because Docker is unavailable.'
+                }
+            }
         }
         failure {
             echo 'CineScope CI/CD failed. Review the stage logs; the previous app remains available.'
