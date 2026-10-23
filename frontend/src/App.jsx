@@ -1,5 +1,5 @@
-import { useMemo, useState } from 'react';
-import { Clapperboard, Film, Search, Star } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { Clapperboard, Film, Moon, Search, Star, Sun } from 'lucide-react';
 
 const movies = [
   {
@@ -54,6 +54,9 @@ const movies = [
 
 function App() {
   const [search, setSearch] = useState('');
+  const [theme, setTheme] = useState(() =>
+    localStorage.getItem('cinescope-theme') === 'light' ? 'light' : 'dark'
+  );
   const visibleMovies = useMemo(
     () =>
       movies.filter((movie) =>
@@ -62,6 +65,11 @@ function App() {
     [search]
   );
 
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme;
+    localStorage.setItem('cinescope-theme', theme);
+  }, [theme]);
+
   return (
     <main className="page-shell">
       <header className="topbar">
@@ -69,7 +77,18 @@ function App() {
           <Film size={25} />
           <span>Cine<span className="brand-accent">Scope</span></span>
         </a>
-        <span className="topbar-label"><Clapperboard size={15} /> MOVIE NIGHT STARTS HERE</span>
+        <div className="topbar-actions">
+          <span className="topbar-label"><Clapperboard size={15} /> MOVIE NIGHT STARTS HERE</span>
+          <button
+            className="theme-toggle"
+            type="button"
+            aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} theme`}
+            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+          >
+            {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
+            <span>{theme === 'dark' ? 'Light mode' : 'Dark mode'}</span>
+          </button>
+        </div>
       </header>
 
       <section className="hero">

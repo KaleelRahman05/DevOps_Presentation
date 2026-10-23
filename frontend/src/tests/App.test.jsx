@@ -1,6 +1,16 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { afterEach, beforeEach } from 'vitest';
 import { describe, expect, it } from 'vitest';
 import App from '../App';
+
+beforeEach(() => {
+  localStorage.clear();
+  delete document.documentElement.dataset.theme;
+});
+
+afterEach(() => {
+  cleanup();
+});
 
 describe('CineScope catalogue', () => {
   it('shows the movie collection', () => {
@@ -28,5 +38,20 @@ describe('CineScope catalogue', () => {
     });
 
     expect(screen.getByText(/no movies match/i)).toBeInTheDocument();
+  });
+
+  it('switches themes and remembers the selection', () => {
+    const { unmount } = render(<App />);
+
+    expect(document.documentElement).toHaveAttribute('data-theme', 'dark');
+    fireEvent.click(screen.getByRole('button', { name: /switch to light theme/i }));
+    expect(document.documentElement).toHaveAttribute('data-theme', 'light');
+    expect(localStorage.getItem('cinescope-theme')).toBe('light');
+
+    unmount();
+    render(<App />);
+
+    expect(document.documentElement).toHaveAttribute('data-theme', 'light');
+    expect(screen.getByRole('button', { name: /switch to dark theme/i })).toBeInTheDocument();
   });
 });
