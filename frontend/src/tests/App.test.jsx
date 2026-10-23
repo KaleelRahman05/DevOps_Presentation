@@ -1,54 +1,32 @@
-import React from 'react';
-import { describe, it, expect } from 'vitest';
-import { render, screen } from '@testing-library/react';
-import { BrowserRouter } from 'react-router-dom';
-import MovieCard from '../components/MovieCard';
-import StarRating from '../components/StarRating';
-import Navbar from '../components/Navbar';
-import { AuthProvider } from '../context/AuthContext';
+import { fireEvent, render, screen } from '@testing-library/react';
+import { describe, expect, it } from 'vitest';
+import App from '../App';
 
-describe('Frontend CineScope UI Components', () => {
-  it('Navbar renders CineScope brand and navigation', () => {
-    render(
-      <AuthProvider>
-        <BrowserRouter>
-          <Navbar />
-        </BrowserRouter>
-      </AuthProvider>
-    );
+describe('CineScope catalogue', () => {
+  it('shows the movie collection', () => {
+    render(<App />);
 
-    expect(screen.getByText(/Cine/i)).toBeInTheDocument();
-    expect(screen.getByText(/Scope/i)).toBeInTheDocument();
-    expect(screen.getByText(/Discover/i)).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /pick your next movie/i })).toBeInTheDocument();
+    expect(screen.getByText('Inception')).toBeInTheDocument();
+    expect(screen.getByText('Interstellar')).toBeInTheDocument();
   });
 
-  it('StarRating renders correct count of stars', () => {
-    render(<StarRating value={7} max={10} readOnly={true} />);
-
-    expect(screen.getByText('7/10')).toBeInTheDocument();
-  });
-
-  it('MovieCard renders movie title, release year, and genres', () => {
-    const mockMovie = {
-      _id: '507f191e810c19729de860ea',
-      title: 'Inception',
-      releaseYear: 2010,
-      genres: ['Sci-Fi', 'Action'],
-      averageRating: 8.8,
-      reviewCount: 42,
-      posterUrl: 'https://example.com/poster.jpg',
-    };
-
-    render(
-      <BrowserRouter>
-        <MovieCard movie={mockMovie} />
-      </BrowserRouter>
-    );
+  it('filters movies by title or genre', () => {
+    render(<App />);
+    fireEvent.change(screen.getByRole('searchbox', { name: /search movies/i }), {
+      target: { value: 'sci-fi' },
+    });
 
     expect(screen.getByText('Inception')).toBeInTheDocument();
-    expect(screen.getByText('2010')).toBeInTheDocument();
-    expect(screen.getByText('8.8')).toBeInTheDocument();
-    expect(screen.getByText('42')).toBeInTheDocument();
-    expect(screen.getByText('Sci-Fi')).toBeInTheDocument();
+    expect(screen.queryByText('Parasite')).not.toBeInTheDocument();
+  });
+
+  it('shows an empty state when there are no matches', () => {
+    render(<App />);
+    fireEvent.change(screen.getByRole('searchbox', { name: /search movies/i }), {
+      target: { value: 'not a movie' },
+    });
+
+    expect(screen.getByText(/no movies match/i)).toBeInTheDocument();
   });
 });

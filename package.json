@@ -1,34 +1,27 @@
 {
   "name": "cinescope-root",
   "version": "1.0.0",
-  "description": "CineScope - Movie Discovery, Ratings & Reviews Platform with Jenkins CI/CD",
+  "description": "Simple static CineScope app for demonstrating Jenkins CI/CD",
   "private": true,
   "type": "module",
   "scripts": {
-    "install:backend": "npm --prefix backend ci || npm --prefix backend install",
-    "install:frontend": "npm --prefix frontend ci || npm --prefix frontend install",
-    "install:all": "npm run install:backend && npm run install:frontend",
-    "test:backend": "npm --prefix backend test",
-    "test:frontend": "npm --prefix frontend test",
-    "test": "npm run test:backend && npm run test:frontend",
-    "build:frontend": "npm --prefix frontend run build",
-    "start:backend": "npm --prefix backend start",
-    "dev:backend": "npm --prefix backend run dev",
-    "dev:frontend": "npm --prefix frontend run dev",
-    "seed": "npm --prefix backend run seed",
+    "test": "npm --prefix frontend test",
+    "build": "npm --prefix frontend run build",
+    "dev": "npm --prefix frontend run dev",
     "smoke:test": "node scripts/smoke-test.js"
   },
   "keywords": [
     "cinescope",
     "movies",
-    "imdb-clone",
+    "static-catalog",
     "jenkins",
     "docker",
     "ci-cd",
-    "express",
-    "react",
-    "mongodb"
+    "react"
   ],
   "author": "CineScope Team",
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "pptxgenjs": "^4.0.1"
+  }
 }
