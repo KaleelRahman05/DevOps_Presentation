@@ -50,6 +50,15 @@ const movies = [
     image: 'https://images.unsplash.com/photo-1478720568477-152d9b164e26?auto=format&fit=crop&w=800&q=85',
     color: '#655a45',
   },
+    {
+    title: 'Jailer 2',
+    year: 2026,
+    rating: 9.3,
+    genre: 'Drama',
+    image: 'https://images.unsplash.com/photo-1478720568477-152d9b164e26?auto=format&fit=crop&w=800&q=85',
+    color: '#655a45',
+  },
+
 ];
 
 function App() {
