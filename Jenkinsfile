@@ -11,6 +11,14 @@ pipeline {
         pollSCM('H/5 * * * *')
     }
 
+    parameters {
+        booleanParam(
+            name: 'DEMO_TEST_FAILURE',
+            defaultValue: true,
+            description: 'Run a deliberate failing test to demonstrate Jenkins failure handling.'
+        )
+    }
+
     stages {
         stage('Checkout') {
             steps {
@@ -32,11 +40,13 @@ pipeline {
 
         stage('Test') {
             steps {
-                script {
-                    if (isUnix()) {
-                        sh 'npm --prefix frontend test'
-                    } else {
-                        bat 'npm --prefix frontend test'
+                withEnv(["CINESCOPE_DEMO_TEST_FAILURE=${params.DEMO_TEST_FAILURE}"]) {
+                    script {
+                        if (isUnix()) {
+                            sh 'npm --prefix frontend test'
+                        } else {
+                            bat 'npm --prefix frontend test'
+                        }
                     }
                 }
             }
@@ -44,57 +54,43 @@ pipeline {
 
         stage('Build') {
             steps {
-                script {
+                withCredentials([
+                    string(credentialsId: 'vercel-token', variable: 'VERCEL_TOKEN'),
+                    string(credentialsId: 'vercel-org-id', variable: 'VERCEL_ORG_ID'),
+                    string(credentialsId: 'vercel-project-id', variable: 'VERCEL_PROJECT_ID')
+                ]) {
                     if (isUnix()) {
-                        sh 'npm --prefix frontend run build'
+                        sh 'npm --prefix frontend run vercel:pull'
+                        sh 'npm --prefix frontend run vercel:build'
                     } else {
-                        bat 'npm --prefix frontend run build'
-                    }
-                }
-            }
-        }
-
-        stage('Check Docker') {
-            steps {
-                script {
-                    def dockerStatus
-                    if (isUnix()) {
-                        dockerStatus = sh(returnStatus: true, script: 'docker info >/dev/null 2>&1')
-                    } else {
-                        dockerStatus = bat(returnStatus: true, script: '@docker info >NUL 2>&1')
-                    }
-
-                    env.DOCKER_AVAILABLE = dockerStatus == 0 ? 'true' : 'false'
-                    if (env.DOCKER_AVAILABLE == 'true') {
-                        echo 'Docker is available. Deployment and smoke test will run.'
-                    } else {
-                        echo 'Docker is unavailable. Deployment and smoke test will be skipped; CI validation will still complete.'
+                        bat 'npm --prefix frontend run vercel:pull'
+                        bat 'npm --prefix frontend run vercel:build'
                     }
                 }
             }
         }
 
         stage('Deploy') {
-            when {
-                expression { env.DOCKER_AVAILABLE == 'true' }
-            }
             steps {
-                script {
+                withCredentials([
+                    string(credentialsId: 'vercel-token', variable: 'VERCEL_TOKEN'),
+                    string(credentialsId: 'vercel-org-id', variable: 'VERCEL_ORG_ID'),
+                    string(credentialsId: 'vercel-project-id', variable: 'VERCEL_PROJECT_ID')
+                ]) {
                     if (isUnix()) {
-                        sh 'docker compose up -d --build frontend'
+                        sh 'npm --prefix frontend run deploy'
                     } else {
-                        bat 'docker compose up -d --build frontend'
+                        bat 'npm --prefix frontend run deploy'
                     }
                 }
             }
         }
 
         stage('Smoke Test') {
-            when {
-                expression { env.DOCKER_AVAILABLE == 'true' }
-            }
             steps {
-                script {
+                withCredentials([
+                    string(credentialsId: 'vercel-site-url', variable: 'FRONTEND_URL')
+                ]) {
                     if (isUnix()) {
                         sh 'node scripts/smoke-test.js'
                     } else {
@@ -107,16 +103,11 @@ pipeline {
 
     post {
         success {
-            script {
-                if (env.DOCKER_AVAILABLE == 'true') {
-                    echo 'CineScope CI/CD succeeded. App: http://localhost:3000'
-                } else {
-                    echo 'CineScope CI validation succeeded (tests and build). Deployment and smoke test were skipped because Docker is unavailable.'
-                }
-            }
+            echo 'CineScope CI/CD succeeded. The production site was deployed and smoke-tested.'
         }
         failure {
-            echo 'CineScope CI/CD failed. Review the stage logs; the previous app remains available.'
+            echo "CineScope CI/CD failed. Check the failed stage in Jenkins: ${env.BUILD_URL}console"
+            echo 'The previous production app remains available.'
         }
     }
 }

@@ -7,18 +7,22 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "test": "vitest run"
-    },
-    "dependencies": {
-      "lucide-react": "^0.475.0",
-      "react": "^18.3.1",
-      "react-dom": "^18.3.1"
+    "test": "vitest run",
+    "vercel:pull": "vercel pull --yes --environment=production",
+    "vercel:build": "vercel build --prod",
+    "deploy": "vercel deploy --prebuilt --prod --yes"
+  },
+  "dependencies": {
+    "lucide-react": "^0.475.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
   },
   "devDependencies": {
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.2.0",
     "@vitejs/plugin-react": "^4.3.4",
     "jsdom": "^26.0.0",
+    "vercel": "^65.2.0",
     "vite": "^6.1.0",
     "vitest": "^3.0.0"
   }

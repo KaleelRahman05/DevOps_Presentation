@@ -13,6 +13,12 @@ afterEach(() => {
 });
 
 describe('CineScope catalogue', () => {
+  if (process.env.CINESCOPE_DEMO_TEST_FAILURE === 'true') {
+    it('demonstrates a failing test in the Jenkins pipeline', () => {
+      expect('demo failure').toBe('passing test');
+    });
+  }
+
   it('shows the movie collection', () => {
     render(<App />);
 
